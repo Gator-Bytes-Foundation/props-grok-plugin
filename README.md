@@ -57,7 +57,9 @@ Production Streamable HTTP:
 
 User-facing copy uses **section** for quest groupings on an Eventure (legacy code may say `saga`). The product name is **Eventure**, never "Venture".
 
-Write tools (create or complete quests) are not in v1.
+Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.
+
+Write tools (create or complete quests) are not in v1. v1 advertises the **`props.read`** scope only.
 
 ## Privacy and terms
 
