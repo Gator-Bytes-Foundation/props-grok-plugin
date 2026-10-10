@@ -1,0 +1,23 @@
+{
+  "name": "props-grok-plugin",
+  "description": "Connect Cursor to Props — Eventures, quest sections, progress, props earned, leaderboards.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Gator Bytes Co.",
+    "email": "contact@props.marketing"
+  },
+  "homepage": "https://props.marketing",
+  "repository": "https://github.com/Gator-Bytes-Foundation/props-grok-plugin",
+  "license": "Apache-2.0",
+  "keywords": [
+    "props",
+    "eventure",
+    "quests",
+    "gamification",
+    "mcp",
+    "leaderboard"
+  ],
+  "logo": "assets/logo.png",
+  "skills": "skills",
+  "mcpServers": "mcp.json"
+}
