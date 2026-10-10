@@ -43,7 +43,7 @@ JSON_FILES = (
     ".mcp.json",
 )
 
-PENDING_PATHS = {"assets/logo.png"}
+PENDING_PATHS: set[str] = set()
 
 ALLOWED_TOOLS = {
     "list_my_active_eventures",
