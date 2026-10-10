@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "props": {
+      "type": "http",
+      "url": "https://mcp.propsgamify.com/mcp"
+    }
+  }
+}
