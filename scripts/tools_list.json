@@ -1,4 +1,6 @@
 {
+  "name": "props-mcp",
+  "pluginRepository": "Gator-Bytes-Foundation/props-grok-plugin",
   "tools": [
     {
       "name": "list_my_active_eventures",
@@ -88,7 +90,7 @@
     },
     {
       "name": "get_eventure",
-      "description": "Eventure profile bootstrap: permissions, group, author — not the full quest list. Do not list private Eventures.",
+      "description": "Eventure profile bootstrap: permissions, group, author — not the full quest list. Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.",
       "inputSchema": {
         "type": "object",
         "required": [
@@ -107,7 +109,7 @@
     },
     {
       "name": "list_eventure_quests",
-      "description": "Quests on an Eventure (sections). Respects publish/visibility for non-managers.",
+      "description": "Quests on an Eventure (sections). Respects publish/visibility for non-managers. Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.",
       "inputSchema": {
         "type": "object",
         "required": [
@@ -143,7 +145,7 @@
     },
     {
       "name": "get_my_eventure_progress",
-      "description": "Progress counters for one Eventure for the signed-in user.",
+      "description": "Progress counters for one Eventure for the signed-in user. Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.",
       "inputSchema": {
         "type": "object",
         "required": [
@@ -162,7 +164,7 @@
     },
     {
       "name": "list_eventure_props_earned",
-      "description": "Props on an Eventure and whether the user collected them this session.",
+      "description": "Props on an Eventure and whether the user collected them this session. Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.",
       "inputSchema": {
         "type": "object",
         "required": [
@@ -184,7 +186,7 @@
     },
     {
       "name": "get_eventure_leaderboard",
-      "description": "Leaderboard for an Eventure session (points or quests completed).",
+      "description": "Leaderboard for an Eventure session (points or quests completed). Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.",
       "inputSchema": {
         "type": "object",
         "required": [

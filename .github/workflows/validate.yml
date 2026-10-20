@@ -20,7 +20,7 @@ jobs:
         env:
           PROPS_TOOLS_MANIFEST_REPO: Gator-Bytes-Foundation/props
           PROPS_TOOLS_MANIFEST_PATH: firebase/grokbot-connector/tools-manifest.json
-          PROPS_TOOLS_MANIFEST_REF: ${{ vars.PROPS_TOOLS_MANIFEST_REF || 'cursor/grokbot-mcp-v1-6cad' }}
+          PROPS_TOOLS_MANIFEST_REF: ${{ vars.PROPS_TOOLS_MANIFEST_REF }}
           PROPS_READ_TOKEN: ${{ secrets.PROPS_READ_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 scripts/sync_tools_list.py --check

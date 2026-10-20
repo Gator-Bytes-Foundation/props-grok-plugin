@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_LOCAL = ROOT / "scripts/tools_list.json"
 DEFAULT_REPO = "Gator-Bytes-Foundation/props"
 DEFAULT_PATH = "firebase/grokbot-connector/tools-manifest.json"
-DEFAULT_REF = "cursor/grokbot-mcp-v1-6cad"
+DEFAULT_REF = "main"
 USER_AGENT = "props-grok-plugin-tools-sync"
 
 
@@ -132,7 +132,7 @@ def main(argv: list[str] | None = None) -> int:
     group.add_argument("--write", action="store_true", help="overwrite local tools_list.json from the props repo")
     parser.add_argument("--repo", default=None, help=f"GitHub repo (default {DEFAULT_REPO})")
     parser.add_argument("--path", default=None, help=f"path in that repo (default {DEFAULT_PATH})")
-    parser.add_argument("--ref", default=None, help="git ref (default $PROPS_TOOLS_MANIFEST_REF or the PR branch)")
+    parser.add_argument("--ref", default=None, help="git ref (default $PROPS_TOOLS_MANIFEST_REF or the props default branch, main)")
     parser.add_argument("--local", default=str(DEFAULT_LOCAL), help="local snapshot path")
     args = parser.parse_args(argv)
 

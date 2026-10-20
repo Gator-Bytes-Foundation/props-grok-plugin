@@ -27,6 +27,18 @@ SERVER_ORDER = [
     "get_eventure_leaderboard",
 ]
 
+PRIVACY_TEXT = (
+    "Do not list, suggest, or volunteer private Eventures the user does not own "
+    "or participate in. Looking one up by a link or ID the user provides is fine."
+)
+PRIVACY_TOOLS = (
+    "get_eventure",
+    "list_eventure_quests",
+    "get_my_eventure_progress",
+    "list_eventure_props_earned",
+    "get_eventure_leaderboard",
+)
+
 
 def load_sync():
     spec = importlib.util.spec_from_file_location("sync_tools_list", SYNC_SCRIPT)
@@ -59,7 +71,9 @@ class ToolsListIsExactManifestTests(unittest.TestCase):
         self.assertNotIn("method", payload)
         self.assertNotIn("jsonrpc", payload)
         self.assertNotIn("id", payload)
-        self.assertIn("tools", payload)
+        self.assertEqual(list(payload.keys()), ["name", "pluginRepository", "tools"])
+        self.assertEqual(payload["name"], "props-mcp")
+        self.assertEqual(payload["pluginRepository"], "Gator-Bytes-Foundation/props-grok-plugin")
 
     def test_tools_preserve_server_order_not_alphabetical(self):
         names = [tool["name"] for tool in manifest_tools(load_tools_list())]
@@ -75,9 +89,20 @@ class ToolsListIsExactManifestTests(unittest.TestCase):
             self.assertIsInstance(tool.get("inputSchema"), dict)
             self.assertGreater(len(tool["description"]), 0)
 
-    def test_descriptions_keep_do_not_list_private_eventures_sentence(self):
-        text = json.dumps(load_tools_list()).lower()
-        self.assertIn("do not list private eventures", text)
+    def test_lookup_tools_use_full_private_eventure_guidance(self):
+        tools = {tool["name"]: tool["description"] for tool in manifest_tools(load_tools_list())}
+        for name in PRIVACY_TOOLS:
+            self.assertIn(PRIVACY_TEXT, tools[name], name)
+            self.assertNotIn("Do not list private Eventures.", tools[name].replace(PRIVACY_TEXT, ""))
+
+    def test_sync_default_ref_is_props_default_branch(self):
+        sync = load_sync()
+        self.assertEqual(sync.DEFAULT_REF, "main")
+
+    def test_readme_notes_ci_needs_props_read_token_secret(self):
+        text = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("PROPS_READ_TOKEN", text)
+        self.assertRegex(text, r"(?i)CI.*PROPS_READ_TOKEN|PROPS_READ_TOKEN.*secret")
 
 
 class SyncScriptTests(unittest.TestCase):
