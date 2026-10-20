@@ -1,0 +1,9 @@
+{
+  "name": "props-grok-plugin",
+  "version": "0.1.0",
+  "description": "Connect Grok to Props — Eventures, quest sections, progress, props earned, leaderboards.",
+  "icon": "assets/logo.png",
+  "author": {
+    "name": "Gator-Bytes-Foundation"
+  }
+}

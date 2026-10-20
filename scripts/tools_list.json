@@ -1,0 +1,221 @@
+{
+  "name": "props-mcp",
+  "pluginRepository": "Gator-Bytes-Foundation/props-grok-plugin",
+  "tools": [
+    {
+      "name": "list_my_active_eventures",
+      "description": "List Eventures the signed-in user is actively participating in (dashboard active row).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "userDisplayName": {
+            "type": "string",
+            "description": "Optional label for logs."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_my_created_eventures",
+      "description": "List solo Eventures the user created (paginated).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 10
+          },
+          "cursor": {
+            "type": "object",
+            "properties": {
+              "created": {
+                "type": "string"
+              },
+              "eventureId": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_my_active_quests",
+      "description": "List side quests and quest participation for the signed-in user.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "userDisplayName": {
+            "type": "string"
+          },
+          "isMigrated": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_my_created_side_quests",
+      "description": "List side quests the user created (paginated).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 10
+          },
+          "cursor": {
+            "type": "object",
+            "properties": {
+              "created": {
+                "type": "string"
+              },
+              "questId": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_eventure",
+      "description": "Eventure profile bootstrap: permissions, group, author — not the full quest list. Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "eventureId"
+        ],
+        "properties": {
+          "eventureId": {
+            "type": "string"
+          },
+          "userDisplayName": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_eventure_quests",
+      "description": "Quests on an Eventure (sections). Respects publish/visibility for non-managers. Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "eventureId"
+        ],
+        "properties": {
+          "eventureId": {
+            "type": "string"
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 25
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sortMode": {
+            "type": "string",
+            "enum": [
+              "orderBy",
+              "created"
+            ],
+            "default": "orderBy"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_my_eventure_progress",
+      "description": "Progress counters for one Eventure for the signed-in user. Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "eventureId"
+        ],
+        "properties": {
+          "eventureId": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_eventure_props_earned",
+      "description": "Props on an Eventure and whether the user collected them this session. Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "eventureId"
+        ],
+        "properties": {
+          "eventureId": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "userDisplayName": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_eventure_leaderboard",
+      "description": "Leaderboard for an Eventure session (points or quests completed). Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "eventureId"
+        ],
+        "properties": {
+          "eventureId": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "points",
+              "quests"
+            ],
+            "default": "points"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 25
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ]
+}
