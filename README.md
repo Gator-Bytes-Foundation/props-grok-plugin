@@ -89,7 +89,14 @@ python3 scripts/validate_plugin.py
 python3 -m unittest discover -s tests -v
 ```
 
-The validator checks skill tool names against `scripts/tools_list.json`, a committed snapshot of the MCP `tools/list` result. Update that file when the server adds or removes tools.
+`scripts/tools_list.json` is an exact copy of the canonical `firebase/grokbot-connector/tools-manifest.json` in [Gator-Bytes-Foundation/props](https://github.com/Gator-Bytes-Foundation/props) (same order, names, descriptions, and schemas). Refresh it from a props git ref (default `cursor/grokbot-mcp-v1-6cad`):
+
+```bash
+PROPS_TOOLS_MANIFEST_REF=cursor/grokbot-mcp-v1-6cad python3 scripts/sync_tools_list.py --write
+python3 scripts/sync_tools_list.py --check
+```
+
+CI runs `--check` and fails if the snapshot differs. Private-repo fetches need `PROPS_READ_TOKEN` (a GitHub token that can read props). Override the ref with the `PROPS_TOOLS_MANIFEST_REF` repo variable.
 
 ## License
 

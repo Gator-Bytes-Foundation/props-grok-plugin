@@ -1,45 +1,219 @@
 {
-  "jsonrpc": "2.0",
-  "id": 1,
-  "method": "tools/list",
-  "result": {
-    "tools": [
-      {
-        "name": "get_eventure",
-        "description": "Eventure profile bootstrap: permissions, group, author — not the full quest list."
-      },
-      {
-        "name": "get_eventure_leaderboard",
-        "description": "Leaderboard for an Eventure session (points or quests completed)."
-      },
-      {
-        "name": "get_my_eventure_progress",
-        "description": "Progress counters for one Eventure for the signed-in user."
-      },
-      {
-        "name": "list_eventure_props_earned",
-        "description": "Props on an Eventure and whether the user collected them this session."
-      },
-      {
-        "name": "list_eventure_quests",
-        "description": "Quests on an Eventure (sections). Respects publish/visibility for non-managers."
-      },
-      {
-        "name": "list_my_active_eventures",
-        "description": "List Eventures the signed-in user is actively participating in (dashboard active row)."
-      },
-      {
-        "name": "list_my_active_quests",
-        "description": "List side quests and quest participation for the signed-in user."
-      },
-      {
-        "name": "list_my_created_eventures",
-        "description": "List solo Eventures the user created (paginated)."
-      },
-      {
-        "name": "list_my_created_side_quests",
-        "description": "List side quests the user created (paginated)."
+  "tools": [
+    {
+      "name": "list_my_active_eventures",
+      "description": "List Eventures the signed-in user is actively participating in (dashboard active row).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "userDisplayName": {
+            "type": "string",
+            "description": "Optional label for logs."
+          }
+        },
+        "additionalProperties": false
       }
-    ]
-  }
+    },
+    {
+      "name": "list_my_created_eventures",
+      "description": "List solo Eventures the user created (paginated).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 10
+          },
+          "cursor": {
+            "type": "object",
+            "properties": {
+              "created": {
+                "type": "string"
+              },
+              "eventureId": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_my_active_quests",
+      "description": "List side quests and quest participation for the signed-in user.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "userDisplayName": {
+            "type": "string"
+          },
+          "isMigrated": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_my_created_side_quests",
+      "description": "List side quests the user created (paginated).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 10
+          },
+          "cursor": {
+            "type": "object",
+            "properties": {
+              "created": {
+                "type": "string"
+              },
+              "questId": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_eventure",
+      "description": "Eventure profile bootstrap: permissions, group, author — not the full quest list. Do not list private Eventures.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "eventureId"
+        ],
+        "properties": {
+          "eventureId": {
+            "type": "string"
+          },
+          "userDisplayName": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_eventure_quests",
+      "description": "Quests on an Eventure (sections). Respects publish/visibility for non-managers.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "eventureId"
+        ],
+        "properties": {
+          "eventureId": {
+            "type": "string"
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 25
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sortMode": {
+            "type": "string",
+            "enum": [
+              "orderBy",
+              "created"
+            ],
+            "default": "orderBy"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_my_eventure_progress",
+      "description": "Progress counters for one Eventure for the signed-in user.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "eventureId"
+        ],
+        "properties": {
+          "eventureId": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_eventure_props_earned",
+      "description": "Props on an Eventure and whether the user collected them this session.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "eventureId"
+        ],
+        "properties": {
+          "eventureId": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "userDisplayName": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_eventure_leaderboard",
+      "description": "Leaderboard for an Eventure session (points or quests completed).",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "eventureId"
+        ],
+        "properties": {
+          "eventureId": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "points",
+              "quests"
+            ],
+            "default": "points"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 25
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ]
 }

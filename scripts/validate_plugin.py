@@ -52,7 +52,7 @@ PENDING_PATHS: set[str] = set()
 
 
 def tool_names_from_tools_list(payload: object) -> list[str]:
-    """Extract sorted unique tool names from an MCP tools/list payload."""
+    """Extract sorted unique tool names from a tools-manifest or tools/list payload."""
     tools: object
     if isinstance(payload, list):
         tools = payload
@@ -81,7 +81,7 @@ def tool_names_from_tools_list(payload: object) -> list[str]:
 
 
 def load_expected_tools(root: Path) -> list[str]:
-    """Load tool names from the committed tools/list snapshot."""
+    """Load tool names from the committed props tools-manifest snapshot."""
     path = root / TOOLS_LIST_REL
     payload = json.loads(path.read_text(encoding="utf-8"))
     names = tool_names_from_tools_list(payload)

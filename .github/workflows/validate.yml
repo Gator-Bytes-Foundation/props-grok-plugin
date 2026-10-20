@@ -16,3 +16,11 @@ jobs:
         run: python3 scripts/validate_plugin.py
       - name: Run plugin contract tests
         run: python3 -m unittest discover -s tests -v
+      - name: Check tools_list.json matches props tools-manifest
+        env:
+          PROPS_TOOLS_MANIFEST_REPO: Gator-Bytes-Foundation/props
+          PROPS_TOOLS_MANIFEST_PATH: firebase/grokbot-connector/tools-manifest.json
+          PROPS_TOOLS_MANIFEST_REF: ${{ vars.PROPS_TOOLS_MANIFEST_REF || 'cursor/grokbot-mcp-v1-6cad' }}
+          PROPS_READ_TOKEN: ${{ secrets.PROPS_READ_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/sync_tools_list.py --check
