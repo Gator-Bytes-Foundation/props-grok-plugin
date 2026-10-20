@@ -10,6 +10,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+PLUGIN_NAME = "props-grok-plugin"
+PROD_MCP_URL = "https://mcp.propsgamify.com/mcp"
+TEST_MCP_URL = "https://props-grok-mcp-test.web.app/mcp"
+TOOLS_LIST_REL = "scripts/tools_list.json"
+
 CURSOR_FIELDS = {
     "name",
     "description",
@@ -45,39 +50,59 @@ JSON_FILES = (
 
 PENDING_PATHS: set[str] = set()
 
-ALLOWED_TOOLS = {
-    "list_my_active_eventures",
-    "list_my_created_eventures",
-    "list_my_active_quests",
-    "list_my_created_side_quests",
-    "get_eventure",
-    "list_eventure_quests",
-    "get_my_eventure_progress",
-    "list_eventure_props_earned",
-    "get_eventure_leaderboard",
-}
 
-errors: list[str] = []
-notes: list[str] = []
+def tool_names_from_tools_list(payload: object) -> list[str]:
+    """Extract sorted unique tool names from an MCP tools/list payload."""
+    tools: object
+    if isinstance(payload, list):
+        tools = payload
+    elif isinstance(payload, dict):
+        result = payload.get("result", payload)
+        if isinstance(result, dict):
+            tools = result.get("tools", [])
+        elif isinstance(result, list):
+            tools = result
+        else:
+            tools = []
+    else:
+        tools = []
+
+    names: set[str] = set()
+    if not isinstance(tools, list):
+        return []
+    for item in tools:
+        if isinstance(item, str) and item:
+            names.add(item)
+        elif isinstance(item, dict):
+            name = item.get("name")
+            if isinstance(name, str) and name:
+                names.add(name)
+    return sorted(names)
 
 
-def err(message: str) -> None:
-    errors.append(message)
+def load_expected_tools(root: Path) -> list[str]:
+    """Load tool names from the committed tools/list snapshot."""
+    path = root / TOOLS_LIST_REL
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    names = tool_names_from_tools_list(payload)
+    if not names:
+        raise ValueError(f"{TOOLS_LIST_REL}: no tool names found")
+    return names
 
 
-def load_json(rel: str) -> object | None:
-    path = ROOT / rel
+def _load_json(root: Path, rel: str, errors: list[str]) -> object | None:
+    path = root / rel
     if not path.is_file():
-        err(f"missing JSON file: {rel}")
+        errors.append(f"missing JSON file: {rel}")
         return None
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        err(f"{rel}: invalid JSON ({exc})")
+        errors.append(f"{rel}: invalid JSON ({exc})")
         return None
 
 
-def is_path_value(value: object) -> bool:
+def _is_path_value(value: object) -> bool:
     if not isinstance(value, str) or not value:
         return False
     if value.startswith(("http://", "https://")):
@@ -87,20 +112,20 @@ def is_path_value(value: object) -> bool:
     return True
 
 
-def check_path(rel_manifest: str, field: str, value: str) -> None:
+def _check_path(root: Path, rel_manifest: str, field: str, value: str, errors: list[str], notes: list[str]) -> None:
     label = f"{rel_manifest} {field}={value!r}"
     if value.startswith("/") or re.match(r"^[A-Za-z]:[\\/]", value):
-        err(f"{label}: absolute paths are not allowed")
+        errors.append(f"{label}: absolute paths are not allowed")
         return
     if ".." in Path(value).parts or value.startswith("../") or "/../" in value:
-        err(f"{label}: parent-directory segments are not allowed")
+        errors.append(f"{label}: parent-directory segments are not allowed")
         return
 
-    target = (ROOT / value).resolve()
+    target = (root / value).resolve()
     try:
-        target.relative_to(ROOT.resolve())
+        target.relative_to(root.resolve())
     except ValueError:
-        err(f"{label}: resolves outside the plugin root")
+        errors.append(f"{label}: resolves outside the plugin root")
         return
 
     if value in PENDING_PATHS or value.lstrip("./") in PENDING_PATHS:
@@ -109,22 +134,22 @@ def check_path(rel_manifest: str, field: str, value: str) -> None:
         return
 
     if not target.exists():
-        err(f"{label}: path does not exist")
+        errors.append(f"{label}: path does not exist")
 
 
-def walk_paths(rel_manifest: str, data: object) -> None:
+def _walk_paths(root: Path, rel_manifest: str, data: object, errors: list[str], notes: list[str]) -> None:
     if isinstance(data, dict):
         for key, value in data.items():
             if key in PATH_KEYS:
                 candidates = value if isinstance(value, list) else [value]
                 for item in candidates:
-                    if is_path_value(item):
-                        check_path(rel_manifest, key, item)
+                    if _is_path_value(item):
+                        _check_path(root, rel_manifest, key, item, errors, notes)
             else:
-                walk_paths(rel_manifest, value)
+                _walk_paths(root, rel_manifest, value, errors, notes)
     elif isinstance(data, list):
         for item in data:
-            walk_paths(rel_manifest, item)
+            _walk_paths(root, rel_manifest, item, errors, notes)
 
 
 def parse_frontmatter(text: str) -> tuple[dict[str, str], str] | None:
@@ -143,88 +168,126 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str] | None:
     return fields, text[match.end() :]
 
 
-def validate_skill(path: Path) -> None:
-    rel = path.relative_to(ROOT).as_posix()
+def _mcp_url(data: object) -> object:
+    if not isinstance(data, dict):
+        return None
+    servers = data.get("mcpServers")
+    if not isinstance(servers, dict):
+        return None
+    props = servers.get("props")
+    if not isinstance(props, dict):
+        return None
+    return props.get("url")
+
+
+def _validate_skill(root: Path, path: Path, allowed_tools: set[str], errors: list[str]) -> None:
+    rel = path.relative_to(root).as_posix()
     parsed = parse_frontmatter(path.read_text(encoding="utf-8"))
     if parsed is None:
-        err(f"{rel}: missing YAML frontmatter delimited by ---")
+        errors.append(f"{rel}: missing YAML frontmatter delimited by ---")
         return
     fields, body = parsed
     if not fields.get("name"):
-        err(f"{rel}: frontmatter is missing name")
+        errors.append(f"{rel}: frontmatter is missing name")
     elif not re.fullmatch(r"[a-z0-9]([a-z0-9.-]*[a-z0-9])?", fields["name"]):
-        err(f"{rel}: name must be kebab-case")
+        errors.append(f"{rel}: name must be kebab-case")
     if not fields.get("description"):
-        err(f"{rel}: frontmatter is missing description")
+        errors.append(f"{rel}: frontmatter is missing description")
 
     if re.search(r"(?<![Ee])[Vv]enture\b", body + "\n" + fields.get("description", "")):
-        err(f"{rel}: say Eventure, never Venture")
+        errors.append(f"{rel}: say Eventure, never Venture")
 
     mentioned = set(re.findall(r"\b[a-z]+(?:_[a-z0-9]+)+\b", body))
-    unknown = sorted(name for name in mentioned if name not in ALLOWED_TOOLS)
+    unknown = sorted(name for name in mentioned if name not in allowed_tools)
     if unknown:
-        err(f"{rel}: unknown tool-like names {unknown}")
-    missing = sorted(ALLOWED_TOOLS - mentioned)
+        errors.append(f"{rel}: unknown tool-like names {unknown}")
+    missing = sorted(allowed_tools - mentioned)
     if missing:
-        err(f"{rel}: does not mention required tools {missing}")
+        errors.append(f"{rel}: does not mention required tools {missing}")
 
 
-def main() -> int:
-    cursor = load_json(".cursor-plugin/plugin.json")
+def validate(root: Path) -> list[str]:
+    """Return validation errors for a plugin root."""
+    errors: list[str] = []
+    notes: list[str] = []
+
+    try:
+        allowed_tools = set(load_expected_tools(root))
+    except FileNotFoundError:
+        errors.append(f"missing {TOOLS_LIST_REL} (MCP tools/list source of truth)")
+        allowed_tools = set()
+    except (json.JSONDecodeError, ValueError) as exc:
+        errors.append(f"{TOOLS_LIST_REL}: {exc}")
+        allowed_tools = set()
+
+    cursor = _load_json(root, ".cursor-plugin/plugin.json", errors)
+    grok = _load_json(root, ".grok-plugin/plugin.json", errors)
+
     if isinstance(cursor, dict):
         extra = sorted(set(cursor) - CURSOR_FIELDS)
         if extra:
-            err(f".cursor-plugin/plugin.json: undocumented fields {extra}")
-        if cursor.get("name") != "props-grok-plugin":
-            err(".cursor-plugin/plugin.json: name must be props-grok-plugin")
+            errors.append(f".cursor-plugin/plugin.json: undocumented fields {extra}")
+        if cursor.get("name") != PLUGIN_NAME:
+            errors.append(f".cursor-plugin/plugin.json: name must be {PLUGIN_NAME}")
         if cursor.get("license") != "Apache-2.0":
-            err(".cursor-plugin/plugin.json: license must be Apache-2.0")
+            errors.append(".cursor-plugin/plugin.json: license must be Apache-2.0")
         if cursor.get("logo") != "assets/logo.png":
-            err(".cursor-plugin/plugin.json: logo must be assets/logo.png")
+            errors.append(".cursor-plugin/plugin.json: logo must be assets/logo.png")
         author = cursor.get("author")
         if not isinstance(author, dict) or not author.get("name"):
-            err(".cursor-plugin/plugin.json: author.name is required")
+            errors.append(".cursor-plugin/plugin.json: author.name is required")
 
-    grok = load_json(".grok-plugin/plugin.json")
-    if isinstance(grok, dict) and grok.get("icon") != "assets/logo.png":
-        err(".grok-plugin/plugin.json: icon must be assets/logo.png")
+    if isinstance(grok, dict):
+        if grok.get("name") != PLUGIN_NAME:
+            errors.append(f".grok-plugin/plugin.json: name must be {PLUGIN_NAME}")
+        if grok.get("icon") != "assets/logo.png":
+            errors.append(".grok-plugin/plugin.json: icon must be assets/logo.png")
 
-    mcp = load_json("mcp.json")
-    if isinstance(mcp, dict):
-        url = (
-            mcp.get("mcpServers", {}).get("props", {}).get("url")
-            if isinstance(mcp.get("mcpServers"), dict)
-            else None
+    if (
+        isinstance(cursor, dict)
+        and isinstance(grok, dict)
+        and cursor.get("name") != grok.get("name")
+    ):
+        errors.append(
+            f"manifest names differ: .cursor-plugin={cursor.get('name')!r} "
+            f".grok-plugin={grok.get('name')!r} (both must be {PLUGIN_NAME})"
         )
-        if url != "https://mcp.propsgamify.com/mcp":
-            err("mcp.json: props.url must be https://mcp.propsgamify.com/mcp")
 
-    grok_mcp = load_json(".mcp.json")
-    if isinstance(grok_mcp, dict):
-        url = (
-            grok_mcp.get("mcpServers", {}).get("props", {}).get("url")
-            if isinstance(grok_mcp.get("mcpServers"), dict)
-            else None
-        )
-        if url != "https://mcp.propsgamify.com/mcp":
-            err(".mcp.json: props.url must be https://mcp.propsgamify.com/mcp")
+    mcp = _load_json(root, "mcp.json", errors)
+    if isinstance(mcp, dict) and _mcp_url(mcp) != PROD_MCP_URL:
+        errors.append(f"mcp.json: props.url must be {PROD_MCP_URL}")
+
+    grok_mcp = _load_json(root, ".mcp.json", errors)
+    if isinstance(grok_mcp, dict) and _mcp_url(grok_mcp) != PROD_MCP_URL:
+        errors.append(f".mcp.json: props.url must be {PROD_MCP_URL}")
+
+    test_mcp_path = root / "mcp.test.json"
+    if test_mcp_path.is_file():
+        test_mcp = _load_json(root, "mcp.test.json", errors)
+        if isinstance(test_mcp, dict) and _mcp_url(test_mcp) != TEST_MCP_URL:
+            errors.append(f"mcp.test.json: props.url must be {TEST_MCP_URL}")
 
     for rel in JSON_FILES:
-        data = load_json(rel)
+        data = _load_json(root, rel, errors)
         if data is not None:
-            walk_paths(rel, data)
+            _walk_paths(root, rel, data, errors, notes)
 
-    skills = list((ROOT / "skills").glob("*/SKILL.md"))
+    skills = list((root / "skills").glob("*/SKILL.md"))
     if not skills:
-        err("no skills/*/SKILL.md files found")
+        errors.append("no skills/*/SKILL.md files found")
     for skill in skills:
-        validate_skill(skill)
+        _validate_skill(root, skill, allowed_tools, errors)
 
-    if not (ROOT / "LICENSE").is_file():
-        err("missing LICENSE")
+    if not (root / "LICENSE").is_file():
+        errors.append("missing LICENSE")
 
     for note in notes:
         print(f"NOTE: {note}")
+    return errors
+
+
+def main() -> int:
+    errors = validate(ROOT)
     if errors:
         for message in errors:
             print(f"ERROR: {message}")

@@ -13,9 +13,9 @@ Always say **Eventure** (that exact product noun). In user-facing text say **sec
 
 - Prefer **read tools** first (`list_my_active_eventures`, `get_eventure`, `list_eventure_quests`, etc.).
 - Say **section** in user-facing text, not "saga".
-- Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.
+- If a lookup by link or ID is not visible, say the Eventure is **private or does not exist**. Do not list, suggest, or volunteer other people's private Eventures.
 - Do not claim to create or complete quests in v1 (write tools are phase 2 with explicit confirmation).
-- If OAuth is missing, tell the user to connect Props when Cursor prompts — sign in with the same Google account they use in Props and grant **`props.read`**.
+- **Google sign-in is required.** If OAuth is missing, tell the user to connect Props when Cursor prompts, sign in with the same Google account they use in Props, and grant **`props.read`**. Other sign-in providers are not supported in v1.
 
 ## Tools (v1, read-only)
 

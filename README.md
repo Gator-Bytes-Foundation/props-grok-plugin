@@ -37,9 +37,17 @@ No API keys. Tokens stay in Cursor's MCP auth store.
 
 ## MCP server
 
-Production Streamable HTTP:
+Production Streamable HTTP (this is what `mcp.json` and `.mcp.json` ship):
 
 `https://mcp.propsgamify.com/mcp`
+
+### Test build
+
+To point a local checkout at the hosted test MCP instead of production, use:
+
+`https://props-grok-mcp-test.web.app/mcp`
+
+A ready-made config is in `mcp.test.json`. Copy it over `mcp.json` and set the same `url` in `.mcp.json` in your local checkout only — do not commit that swap. OAuth for the test MCP is discovered automatically from `https://props-grok-oauth-test.web.app`.
 
 ## Tools (v1, read-only)
 
@@ -57,19 +65,31 @@ Production Streamable HTTP:
 
 User-facing copy uses **section** for quest groupings on an Eventure (legacy code may say `saga`). The product name is **Eventure**, never "Venture".
 
-Do not list, suggest, or volunteer private Eventures the user does not own or participate in. Looking one up by a link or ID the user provides is fine.
+If a lookup is not visible, say the Eventure is private or does not exist. Do not list, suggest, or volunteer other people's private Eventures. Looking one up by a link or ID the user provides is fine.
 
 Write tools (create or complete quests) are not in v1. v1 advertises the **`props.read`** scope only.
 
 ## Privacy and terms
 
-Network calls go only to Props MCP and OAuth endpoints under `propsgamify.com`. See [props.marketing](https://props.marketing) for privacy and terms.
+The plugin does **not** keep all traffic under `propsgamify.com`. Hosts it uses:
+
+| Host | Role |
+|------|------|
+| `mcp.propsgamify.com` | Production MCP |
+| `props-grok-mcp-test.web.app` | Test-build MCP |
+| `props-grok-oauth-test.web.app` | Props OAuth authorization server (not under `propsgamify.com`) |
+| `accounts.google.com` | Google sign-in (required during the browser OAuth flow) |
+
+See [props.marketing](https://props.marketing) for privacy and terms.
 
 ## Validate locally
 
 ```bash
 python3 scripts/validate_plugin.py
+python3 -m unittest discover -s tests -v
 ```
+
+The validator checks skill tool names against `scripts/tools_list.json`, a committed snapshot of the MCP `tools/list` result. Update that file when the server adds or removes tools.
 
 ## License
 

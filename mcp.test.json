@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "props": {
+      "url": "https://props-grok-mcp-test.web.app/mcp"
+    }
+  }
+}
