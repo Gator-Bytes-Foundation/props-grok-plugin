@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -174,6 +175,29 @@ class SyncScriptTests(unittest.TestCase):
             with patch.object(sync, "fetch_canonical_manifest", return_value=remote):
                 differs, message = sync.check_local_matches_remote(local_path)
             self.assertFalse(differs, message)
+
+    def test_main_skips_check_in_ci_when_props_read_token_missing_and_fetch_fails(self):
+        sync = load_sync()
+        fetch_error = RuntimeError("failed to fetch canonical tools-manifest")
+        env = {
+            "GITHUB_ACTIONS": "true",
+            "PROPS_READ_TOKEN": "",
+            "GH_TOKEN": "",
+            "GITHUB_TOKEN": "",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(sync, "check_local_matches_remote", side_effect=fetch_error):
+                code = sync.main(["--check"])
+        self.assertEqual(code, 0)
+
+    def test_main_enforces_check_in_ci_when_props_read_token_set_and_fetch_fails(self):
+        sync = load_sync()
+        fetch_error = RuntimeError("failed to fetch canonical tools-manifest")
+        env = {"GITHUB_ACTIONS": "true", "PROPS_READ_TOKEN": "secret-token"}
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(sync, "check_local_matches_remote", side_effect=fetch_error):
+                code = sync.main(["--check"])
+        self.assertEqual(code, 1)
 
 
 if __name__ == "__main__":

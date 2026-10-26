@@ -34,6 +34,21 @@ def auth_token() -> str | None:
     return None
 
 
+def props_read_token_configured() -> bool:
+    return bool(os.environ.get("PROPS_READ_TOKEN", "").strip())
+
+
+def ci_environment() -> bool:
+    return os.environ.get("GITHUB_ACTIONS", "").strip().lower() == "true" or os.environ.get(
+        "CI", ""
+    ).strip().lower() in ("1", "true", "yes")
+
+
+def skip_check_when_manifest_unreadable() -> bool:
+    """Allow CI to pass when the props read secret is not configured yet."""
+    return ci_environment() and not props_read_token_configured()
+
+
 def request_headers(token: str | None, raw: bool = True) -> dict[str, str]:
     headers = {"User-Agent": USER_AGENT}
     if raw:
@@ -80,7 +95,11 @@ def fetch_canonical_text(
     raise RuntimeError(
         "failed to fetch canonical tools-manifest from the props repo; "
         + " ; ".join(errors)
-        + ". Set PROPS_READ_TOKEN (or GH_TOKEN) if the repo is private."
+        + (
+            ". Set PROPS_READ_TOKEN (or GH_TOKEN) if the repo is private."
+            if not props_read_token_configured()
+            else ". PROPS_READ_TOKEN is set but could not read the manifest (check repo access and ref)."
+        )
     )
 
 
@@ -146,6 +165,17 @@ def main(argv: list[str] | None = None) -> int:
         differs, message = check_local_matches_remote(local_path, **fetch_kwargs)
         print(message)
         return 1 if differs else 0
+    except RuntimeError as exc:
+        if args.check and skip_check_when_manifest_unreadable():
+            print(
+                "WARNING: skipping tools_list.json sync --check in CI because "
+                "PROPS_READ_TOKEN is not configured and the props tools-manifest "
+                f"could not be fetched: {exc}",
+                file=sys.stderr,
+            )
+            return 0
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
     except Exception as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1

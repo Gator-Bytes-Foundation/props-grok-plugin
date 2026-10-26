@@ -16,6 +16,7 @@ jobs:
         run: python3 scripts/validate_plugin.py
       - name: Run plugin contract tests
         run: python3 -m unittest discover -s tests -v
+      # Enforces exact copy when secrets.PROPS_READ_TOKEN is set; otherwise skips with a warning.
       - name: Check tools_list.json matches props tools-manifest
         env:
           PROPS_TOOLS_MANIFEST_REPO: Gator-Bytes-Foundation/props

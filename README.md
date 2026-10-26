@@ -96,7 +96,7 @@ python3 scripts/sync_tools_list.py --write
 python3 scripts/sync_tools_list.py --check
 ```
 
-CI runs `--check` and fails if the snapshot differs. That job needs the **`PROPS_READ_TOKEN` repository secret** (a GitHub token that can read the private props repo). Optionally override the ref with the `PROPS_TOOLS_MANIFEST_REF` repository variable.
+CI runs `--check` and fails if the snapshot differs **when `PROPS_READ_TOKEN` is configured**. Add the **`PROPS_READ_TOKEN` repository secret** (a GitHub token that can read the private props repo) to enforce the live manifest in CI; until then, the workflow skips that step with a warning so public PRs stay green. Optionally override the ref with the `PROPS_TOOLS_MANIFEST_REF` repository variable.
 
 ## License
 
